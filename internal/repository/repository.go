@@ -12,8 +12,55 @@ type Repository struct {
 	db *sql.DB
 }
 
+type productScanner interface {
+	Scan(dest ...interface{}) error
+}
+
 func New(db *sql.DB) *Repository {
 	return &Repository{db: db}
+}
+
+func scanProduct(s productScanner) (models.Product, error) {
+	var p models.Product
+	var title sql.NullString
+	var weight sql.NullFloat64
+	var unit sql.NullString
+	var guarantee sql.NullTime
+
+	err := s.Scan(
+		&p.ID,
+		&p.Name,
+		&p.Producer,
+		&p.Type,
+		&p.Description,
+		&title,
+		&p.Cost,
+		&weight,
+		&unit,
+		&guarantee,
+		&p.ImageURL,
+		&p.CategoryID,
+		&p.CreatedAt,
+		&p.UpdatedAt,
+	)
+	if err != nil {
+		return models.Product{}, err
+	}
+
+	if title.Valid {
+		p.Title = &title.String
+	}
+	if weight.Valid {
+		p.Weight = &weight.Float64
+	}
+	if unit.Valid {
+		p.Unit = &unit.String
+	}
+	if guarantee.Valid {
+		p.Guarantee = &guarantee.Time
+	}
+
+	return p, nil
 }
 
 func (r *Repository) CreateUser(ctx context.Context, req models.RegisterRequest, passHash string) (int, error) {
@@ -59,7 +106,9 @@ func (r *Repository) ListCategories(ctx context.Context) ([]models.Category, err
 }
 
 func (r *Repository) ListProducts(ctx context.Context, f models.ProductFilters) ([]models.Product, error) {
-	base := `SELECT id, name, description, cost::double precision AS cost, image_url, category_id, created_at FROM products`
+	base := `SELECT id, name, producer, type, description, title, cost::double precision AS cost,
+	                weight::double precision, unit, guarantee, image_url, category_id, created_at, updated_at
+	         FROM products`
 	where := make([]string, 0)
 	args := make([]interface{}, 0)
 
@@ -94,9 +143,9 @@ func (r *Repository) ListProducts(ctx context.Context, f models.ProductFilters) 
 
 	products := make([]models.Product, 0)
 	for rows.Next() {
-		var p models.Product
-		if err = rows.Scan(&p.ID, &p.Name, &p.Description, &p.Cost, &p.ImageURL, &p.CategoryID, &p.CreatedAt); err != nil {
-			return nil, err
+		p, scanErr := scanProduct(rows)
+		if scanErr != nil {
+			return nil, scanErr
 		}
 		products = append(products, p)
 	}
@@ -104,9 +153,11 @@ func (r *Repository) ListProducts(ctx context.Context, f models.ProductFilters) 
 }
 
 func (r *Repository) GetProductByID(ctx context.Context, id int) (*models.Product, error) {
-	const q = `SELECT id, name, description, cost::double precision AS cost, image_url, category_id, created_at FROM products WHERE id = $1`
-	var p models.Product
-	if err := r.db.QueryRowContext(ctx, q, id).Scan(&p.ID, &p.Name, &p.Description, &p.Cost, &p.ImageURL, &p.CategoryID, &p.CreatedAt); err != nil {
+	const q = `SELECT id, name, producer, type, description, title, cost::double precision AS cost,
+	                  weight::double precision, unit, guarantee, image_url, category_id, created_at, updated_at
+	           FROM products WHERE id = $1`
+	p, err := scanProduct(r.db.QueryRowContext(ctx, q, id))
+	if err != nil {
 		return nil, err
 	}
 	return &p, nil

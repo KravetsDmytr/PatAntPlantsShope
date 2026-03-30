@@ -33,11 +33,18 @@ type Category struct {
 type Product struct {
 	ID          int       `json:"id"`
 	Name        string    `json:"name"`
+	Producer    string    `json:"producer"`
+	Type        string    `json:"type"`
 	Description string    `json:"description"`
+	Title       *string   `json:"title"`
 	Cost        float64   `json:"cost"`
+	Weight      *float64  `json:"weight"`
+	Unit        *string   `json:"unit"`
+	Guarantee   *time.Time `json:"guarantee"`
 	ImageURL    string    `json:"image_url"`
 	CategoryID  int       `json:"category_id"`
 	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type ProductFilters struct {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Product } from "@/lib/types";
 
 type Props = {
@@ -19,9 +20,14 @@ export function ProductCard({ product, onAdd }: Props) {
       <p style={{ margin: 0, fontSize: 13, color: "#6b7280", minHeight: 40 }}>{product.description}</p>
       <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <strong>{product.cost} грн</strong>
-        <button className="btn" onClick={() => onAdd(product.id)}>
-          До кошика
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link className="btn secondary" href={`/products/${product.id}`}>
+            Детально
+          </Link>
+          <button className="btn" onClick={() => onAdd(product.id)}>
+            До кошика
+          </button>
+        </div>
       </div>
     </div>
   );
