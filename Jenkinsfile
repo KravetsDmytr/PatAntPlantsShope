@@ -3,7 +3,7 @@ pipeline {
     environment {
         WEB_PORT = '18080'
         POSTGRES_PORT = '55432'
-        API_BASE_URL = 'http://localhost:18080/api/v1'
+        API_BASE_URL = 'http://host.docker.internal:18080/api/v1'
     }
 
     stages {
