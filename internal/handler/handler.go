@@ -33,6 +33,16 @@ func respond(c *gin.Context, code int, message string, data interface{}, err int
 	c.JSON(code, models.APIResponse{Message: message, Data: data, Error: err})
 }
 
+// Register registers a new user
+// @Summary Реєстрація користувача
+// @Description Створює нового користувача в системі
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body models.RegisterRequest true "Дані користувача"
+// @Success 201 {object} models.APIResponse
+// @Failure 400 {object} models.APIResponse
+// @Router /auth/register [post]
 func (h *Handler) Register(c *gin.Context) {
 	var req models.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -46,6 +56,17 @@ func (h *Handler) Register(c *gin.Context) {
 	respond(c, http.StatusCreated, "Користувача створено", nil, nil)
 }
 
+// Login authenticates user and returns JWT token
+// @Summary Авторизація користувача
+// @Description Виконує вхід користувача та повертає JWT токен
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body models.LoginRequest true "Облікові дані"
+// @Success 200 {object} models.APIResponse
+// @Failure 400 {object} models.APIResponse
+// @Failure 401 {object} models.APIResponse
+// @Router /auth/login [post]
 func (h *Handler) Login(c *gin.Context) {
 	var req models.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -60,6 +81,14 @@ func (h *Handler) Login(c *gin.Context) {
 	respond(c, http.StatusOK, "Вхід успішний", models.TokenResponse{Token: token}, nil)
 }
 
+// Categories returns all categories
+// @Summary Отримати категорії
+// @Description Повертає список категорій товарів
+// @Tags Categories
+// @Produce json
+// @Success 200 {object} models.APIResponse
+// @Failure 500 {object} models.APIResponse
+// @Router /categories [get]
 func (h *Handler) Categories(c *gin.Context) {
 	data, err := h.service.GetCategories(c.Request.Context())
 	if err != nil {
@@ -69,6 +98,19 @@ func (h *Handler) Categories(c *gin.Context) {
 	respond(c, http.StatusOK, "Категорії отримано", data, nil)
 }
 
+// Products returns products list with filters
+// @Summary Отримати список товарів
+// @Description Повертає товари з фільтрацією за категорією, вартістю та пошуковим запитом
+// @Tags Products
+// @Produce json
+// @Param category_id query int false "ID категорії"
+// @Param min_cost query number false "Мінімальна вартість"
+// @Param max_cost query number false "Максимальна вартість"
+// @Param q query string false "Пошуковий запит"
+// @Success 200 {object} models.APIResponse
+// @Failure 400 {object} models.APIResponse
+// @Failure 500 {object} models.APIResponse
+// @Router /products [get]
 func (h *Handler) Products(c *gin.Context) {
 	var filters models.ProductFilters
 
@@ -81,7 +123,6 @@ func (h *Handler) Products(c *gin.Context) {
 		filters.CategoryID = &id
 	}
 
-	// ERD/БД: cost. Для удобства принимаем и старые параметры min_price/max_price.
 	if raw := c.Query("min_cost"); raw != "" {
 		v, err := strconv.ParseFloat(raw, 64)
 		if err != nil {
@@ -124,6 +165,17 @@ func (h *Handler) Products(c *gin.Context) {
 	respond(c, http.StatusOK, "Товари отримано", data, nil)
 }
 
+// ProductByID returns product by id
+// @Summary Отримати товар за ID
+// @Description Повертає детальну інформацію про товар
+// @Tags Products
+// @Produce json
+// @Param id path int true "ID товару"
+// @Success 200 {object} models.APIResponse
+// @Failure 400 {object} models.APIResponse
+// @Failure 404 {object} models.APIResponse
+// @Failure 500 {object} models.APIResponse
+// @Router /products/{id} [get]
 func (h *Handler) ProductByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -142,6 +194,19 @@ func (h *Handler) ProductByID(c *gin.Context) {
 	respond(c, http.StatusOK, "Товар отримано", data, nil)
 }
 
+// AddToCart adds product to cart
+// @Summary Додати товар у кошик
+// @Description Додає товар у кошик авторизованого користувача
+// @Tags Cart
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer JWT токен"
+// @Param request body models.AddToCartRequest true "Товар і кількість"
+// @Success 200 {object} models.APIResponse
+// @Failure 400 {object} models.APIResponse
+// @Failure 401 {object} models.APIResponse
+// @Router /cart/items [post]
+// @Security ApiKeyAuth
 func (h *Handler) AddToCart(c *gin.Context) {
 	userIDAny, _ := c.Get("user_id")
 	userID, ok := userIDAny.(int)
@@ -163,6 +228,17 @@ func (h *Handler) AddToCart(c *gin.Context) {
 	respond(c, http.StatusOK, "Товар додано до кошика", nil, nil)
 }
 
+// Cart returns user cart
+// @Summary Отримати кошик
+// @Description Повертає вміст кошика авторизованого користувача
+// @Tags Cart
+// @Produce json
+// @Param Authorization header string true "Bearer JWT токен"
+// @Success 200 {object} models.APIResponse
+// @Failure 401 {object} models.APIResponse
+// @Failure 500 {object} models.APIResponse
+// @Router /cart [get]
+// @Security ApiKeyAuth
 func (h *Handler) Cart(c *gin.Context) {
 	userIDAny, _ := c.Get("user_id")
 	userID, ok := userIDAny.(int)

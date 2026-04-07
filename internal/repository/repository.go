@@ -192,7 +192,6 @@ func (r *Repository) UpsertCartItem(ctx context.Context, cartID, productID, qty 
 		return err
 	}
 
-	// Обновляем агрегаты carts.amount / carts.amount_cost.
 	const updateAgg = `
 		UPDATE carts c
 		SET

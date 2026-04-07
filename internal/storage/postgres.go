@@ -21,8 +21,6 @@ func Open(cfg config.DBConfig) (*sql.DB, error) {
 		return nil, fmt.Errorf("не вдалося відкрити БД: %w", err)
 	}
 
-	// docker compose може піднимать postgres позже, чем приложение.
-	// Добавляем простую ретра́й-логику перед пингом/миграциями.
 	var lastErr error
 	for i := 0; i < 12; i++ {
 		if err = db.Ping(); err == nil {

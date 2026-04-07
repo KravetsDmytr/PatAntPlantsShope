@@ -5,7 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { api } from "@/lib/api";
 import { authStore } from "@/lib/auth";
 import { Category, Product } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -16,7 +16,7 @@ export default function HomePage() {
   const [maxCost, setMaxCost] = useState("");
   const [error, setError] = useState("");
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setError("");
       const [c, p] = await Promise.all([
@@ -33,12 +33,11 @@ export default function HomePage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Помилка завантаження");
     }
-  }
+  }, [categoryId, q, minCost, maxCost]);
 
   useEffect(() => {
     void loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryId]);
+  }, [loadData]);
 
   async function addToCart(productId: number) {
     const token = authStore.getToken();
