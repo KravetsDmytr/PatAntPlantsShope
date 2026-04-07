@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: pet_store
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +22,7 @@ services:
     environment:
       CONFIG_PATH: /app/internal/config/config.docker.yaml
     ports:
-      - "8080:8080"
+      - "${WEB_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,9 +32,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080/api/v1
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:${WEB_PORT:-8080}/api/v1
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     depends_on:
       - web
 

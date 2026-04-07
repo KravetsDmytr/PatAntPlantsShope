@@ -1,5 +1,10 @@
 pipeline {
     agent any
+    environment {
+        WEB_PORT = '18080'
+        POSTGRES_PORT = '55432'
+        API_BASE_URL = 'http://localhost:18080/api/v1'
+    }
 
     stages {
         stage('Start API for tests') {
@@ -10,7 +15,7 @@ pipeline {
 
         stage('Run tests in Docker Python') {
             steps {
-                bat 'docker run --rm -v "%CD%:/app" -w /app python:3.12-slim sh -c "pip install -r requirements.txt && pytest tests --junitxml=report.xml -v"'
+                bat 'docker run --rm -e API_BASE_URL=%API_BASE_URL% -v "%CD%:/app" -w /app python:3.12-slim sh -c "pip install -r requirements.txt && pytest tests --junitxml=report.xml -v"'
             }
         }
     }
