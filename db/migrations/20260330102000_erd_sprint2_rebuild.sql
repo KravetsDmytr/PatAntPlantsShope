@@ -1,5 +1,4 @@
 -- +goose Up
--- +goose StatementBegin
 -- Пересобираем таблицы под ERD (Sprint 2), сохраняя endpoint-контракт:
 -- products => name/description/image_url/price,
 -- cart_products => количество + расчёт общей суммы.
@@ -12,7 +11,6 @@ DROP TABLE IF EXISTS carts;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS users;
 
--- Создаем USERS как на диаграмме (+ минимальные поля для auth).
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     login VARCHAR(255) UNIQUE NOT NULL,
@@ -28,15 +26,12 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(64) NOT NULL DEFAULT 'user'
 );
 
--- CARTS
--- CATEGORIES (оставляем как нужно для Sprint 2 UI)
--- (На ERD может быть не показана, но фронт использует /categories)
+
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(150) UNIQUE NOT NULL
 );
 
--- PRODUCTS как на диаграмме + дополнительные поля, нужные фронту.
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -50,13 +45,11 @@ CREATE TABLE IF NOT EXISTS products (
     unit VARCHAR(10),
     title TEXT,
 
-    -- для текущего API Sprint 2
     description TEXT NOT NULL,
     image_url TEXT NOT NULL,
     category_id INT NOT NULL REFERENCES categories(id) ON DELETE RESTRICT
 );
 
--- CARTS
 CREATE TABLE IF NOT EXISTS carts (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
@@ -66,7 +59,6 @@ CREATE TABLE IF NOT EXISTS carts (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- CART_PRODUCTS (join)
 CREATE TABLE IF NOT EXISTS cart_products (
     id SERIAL PRIMARY KEY,
     cart_id INT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
@@ -75,7 +67,6 @@ CREATE TABLE IF NOT EXISTS cart_products (
     UNIQUE (cart_id, product_id)
 );
 
--- SEED Sprint 2 (категории + продукты)
 INSERT INTO categories (name) VALUES
 ('Корм для собак'),
 ('Корм для котів'),
@@ -139,15 +130,10 @@ WHERE c.name = 'Рослини для дому'
     SELECT 1 FROM products p WHERE p.name = 'Монстера Deliciosa' AND p.category_id = c.id
   );
 
--- Обнуляем кошики после пересборки.
 DELETE FROM carts;
--- +goose StatementEnd
 
 -- +goose Down
--- +goose StatementBegin
 DROP TABLE IF EXISTS cart_products;
 DROP TABLE IF EXISTS carts;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS users;
--- categories не трогаем, чтобы не ломать ранние спринты
--- +goose StatementEnd
